@@ -3,6 +3,90 @@ from torch import nn, device
 import tqdm
 from src.Jackpot.training.eval import evaluate_at_epoch
 from src.Jackpot.utils.utils import get_effective_sparsity_info
+import torch.utils.data as data
+from torchvision.transforms import v2
+from torchvision import datasets
+from src.Jackpot.models.data import PreloadedDataset
+
+
+def getTrainingDataLoaders(
+    dataset_name,
+    download=True,
+    BATCH_SIZE=64,
+    augment=True,
+    preload_train=None,
+):
+    dataset_name = dataset_name.lower()
+
+    # ----------------------------
+    # CIFAR branch
+    # ----------------------------
+    if dataset_name in ["cifar10", "cifar100"]:
+        if dataset_name == "cifar10":
+            DataClass = datasets.CIFAR10
+            n_classes = 10
+        else:
+            DataClass = datasets.CIFAR100
+            n_classes = 100
+
+        task = "multi-class"
+        info = {
+            "dataset": dataset_name,
+            "n_channels": 3,
+            "size": (32, 32)
+        }
+
+        # normal eval/test transform
+        test_transform = v2.Compose([
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+        ])
+
+        # standard random train augmentation for CIFAR
+        if augment:
+            train_transform = v2.Compose([
+                v2.ToImage(),
+                v2.RandomHorizontalFlip(p=0.5),
+                v2.RandomCrop(size=(32, 32), padding=4),
+                # optional:
+                # v2.RandomRotation(15),
+                v2.ToDtype(torch.float32, scale=True),
+                v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            ])
+        else:
+            train_transform = test_transform
+
+        train_dataset = DataClass(
+            root="./data",
+            train=True,
+            transform=train_transform,
+            download=download
+        )
+        test_dataset = DataClass(
+            root="./data",
+            train=False,
+            transform=test_transform,
+            download=download
+        )
+
+    else:
+        raise ValueError(f"Unsupported dataset: {dataset_name}")
+
+
+    # automatic choice:
+    # if augment=True, don't preload, so random augmentation happens every epoch
+    if preload_train is None:
+        preload_train = not augment
+
+    if preload_train:
+        train_dataset = PreloadedDataset(train_dataset)
+
+    train_loader = data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    train_loader_at_eval = data.DataLoader(train_dataset, batch_size=2 * BATCH_SIZE, shuffle=False)
+    test_loader = data.DataLoader(test_dataset, batch_size=2 * BATCH_SIZE, shuffle=False)
+
+    return info, task, n_classes, train_loader, train_loader_at_eval, test_loader
 
 
 def trainit(model,
@@ -75,8 +159,6 @@ def train_with_epoch_checkpoints(
     train_loader_at_eval,
     test_loader,
     data_flag,
-    run_dir,
-    prefix="train",
     no_progress=False,
     return_losses=True,
     return_sparsity=True,

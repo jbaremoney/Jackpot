@@ -6,9 +6,7 @@ def test(split,
          model,
          train_loader_at_eval,
          test_loader,
-         task,
          n_classes,
-         data_flag=None,
          return_metrics=False):
 
     model.eval()
@@ -49,9 +47,7 @@ def evaluate_model(model, train_loader_at_eval, test_loader, task, n_classes, da
         model=model,
         train_loader_at_eval=train_loader_at_eval,
         test_loader=test_loader,
-        task=task,
         n_classes=n_classes,
-        data_flag=data_flag,
         return_metrics=True,
     )
 
@@ -60,9 +56,7 @@ def evaluate_model(model, train_loader_at_eval, test_loader, task, n_classes, da
         model=model,
         train_loader_at_eval=train_loader_at_eval,
         test_loader=test_loader,
-        task=task,
         n_classes=n_classes,
-        data_flag=data_flag,
         return_metrics=True,
     )
 
