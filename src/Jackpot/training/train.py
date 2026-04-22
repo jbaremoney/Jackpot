@@ -1,66 +1,8 @@
-from models.layer import PoppedUpLayer
 import torch
 from torch import nn, device
 import tqdm
-import os
-
-
-def get_effective_sparsity_info(model):
-    total_zeros = 0
-    total_count = 0
-
-    for module in model.modules():
-        if isinstance(module, PoppedUpLayer) and isinstance(module.module, (nn.Linear, nn.Conv2d)):
-            effective_weight = module._masked_parameters()["weight"]
-            total_zeros += (effective_weight == 0).sum().item()
-            total_count += effective_weight.numel()
-
-    return {"sparsity": total_zeros / total_count if total_count > 0 else 0.0,
-            "zero_count":total_count,
-            "total_count": total_count}
-
-def evaluate_model(model, train_loader_at_eval, test_loader, task, n_classes, data_flag):
-    train_loss, train_acc = test(
-        split="train",
-        model=model,
-        train_loader_at_eval=train_loader_at_eval,
-        test_loader=test_loader,
-        task=task,
-        n_classes=n_classes,
-        data_flag=data_flag,
-        return_metrics=True,
-    )
-
-    test_loss, test_acc = test(
-        split="test",
-        model=model,
-        train_loader_at_eval=train_loader_at_eval,
-        test_loader=test_loader,
-        task=task,
-        n_classes=n_classes,
-        data_flag=data_flag,
-        return_metrics=True,
-    )
-
-    return {
-        "train_loss": float(train_loss),
-        "train_acc": float(train_acc),
-        "test_loss": float(test_loss),
-        "test_acc": float(test_acc),
-    }
-
-
-def evaluate_at_epoch(model, epoch, train_loader_at_eval, test_loader, task, n_classes, data_flag):
-    metrics = evaluate_model(
-        model=model,
-        train_loader_at_eval=train_loader_at_eval,
-        test_loader=test_loader,
-        task=task,
-        n_classes=n_classes,
-        data_flag=data_flag,
-    )
-    metrics["epoch"] = epoch
-    return metrics
+from src.Jackpot.training.eval import evaluate_at_epoch
+from src.Jackpot.utils.utils import get_effective_sparsity_info
 
 
 def trainit(model,
@@ -119,6 +61,8 @@ def trainit(model,
         return losses
     elif return_sparsity:
         return sparsities
+
+
 
 def train_with_epoch_checkpoints(
     model,
@@ -221,44 +165,3 @@ def train_with_epoch_checkpoints(
         checkpoint_rows.append(metrics)
 
     return all_losses, all_sparsities, checkpoint_rows
-
-def test(split,
-         model,
-         train_loader_at_eval,
-         test_loader,
-         task,
-         n_classes,
-         data_flag=None,
-         return_metrics=False):
-
-    model.eval()
-    criterion = nn.CrossEntropyLoss()
-
-    data_loader = train_loader_at_eval if split == 'train' else test_loader
-
-    total_loss = 0.0
-    total_correct = 0
-    total_samples = 0
-
-    with torch.no_grad():
-        for inputs, targets in data_loader:
-            inputs = inputs.to(device, non_blocking=True)
-            targets = targets.to(device, non_blocking=True).long()   # shape [B]
-
-            outputs = model(inputs)[:, :n_classes]   # shape [B, n_classes]
-            loss = criterion(outputs, targets)
-
-            preds = outputs.argmax(dim=1)
-
-            batch_size = targets.size(0)
-            total_loss += loss.item() * batch_size
-            total_correct += (preds == targets).sum().item()
-            total_samples += batch_size
-
-    avg_loss = total_loss / total_samples
-    acc = total_correct / total_samples
-
-    print(f"{split} loss: {avg_loss:.4f} acc: {acc:.4f}")
-
-    if return_metrics:
-        return avg_loss, acc

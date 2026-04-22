@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-from models.layer import MaskLayer
-import copy
 
 
 class CIFARVGG16(nn.Module):
@@ -97,47 +95,3 @@ class CIFARMLP(nn.Module):
         x = self.flatten(x)
         x = self.layers(x)
         return x
-
-
-class MaskedNetwork(nn.Module):
-    def __init__(self, net: nn.Module, masks=None):
-        super().__init__()
-
-        self.net = copy.deepcopy(net)
-
-        if masks is None:
-            masks = []
-
-        self._mask_index = 0
-        self._provided_masks = masks
-
-        self._wrap_modules(self.net)
-
-
-    def _next_mask(self):
-        if self._mask_index < len(self._provided_masks):
-            mask = self._provided_masks[self._mask_index]
-        else:
-            mask = None
-        self._mask_index += 1
-        return mask
-
-    def _wrap_modules(self, module: nn.Module):
-        for name, child in list(module.named_children()):
-            if isinstance(child, (nn.Linear, nn.Conv2d)):
-                mask = self._next_mask()
-                setattr(module, name, MaskLayer(child, mask))
-            else:
-                self._wrap_modules(child)
-
-    def forward(self, x):
-        return self.net(x)
-
-    def get_masks(self):
-        masks = []
-        for m in self.net.modules():
-            if isinstance(m, MaskLayer):
-                masks.append(m.mask)
-        return masks
-
-

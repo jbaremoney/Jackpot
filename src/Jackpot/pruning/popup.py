@@ -1,9 +1,8 @@
 import torch
-import torch.nn.functional as F
 import torch.nn as nn
 from torch import autograd
 from torch.func import functional_call
-
+import copy
 
 class GetSubnet(autograd.Function):
     @staticmethod
@@ -27,7 +26,7 @@ class GetSubnet(autograd.Function):
         # send the gradient g straight-through on the backward pass.
         return grad, None
 
-
+"""general class to wrap a module, 'popupify' the trainable parameters"""
 class PoppedUpLayer(nn.Module):
     def __init__(self, module: nn.Module, k: float = 0.5, just_weight: bool = True):
         super().__init__()
@@ -100,54 +99,26 @@ class PoppedUpLayer(nn.Module):
         return functional_call(self.module, {**masked_params, **buffers}, (x,))
 
 
-class MaskLayer(nn.Module):
-    """used for comparison to snip, grasp, imp
-        only masks weights
-    """
-    def __init__(self, layer: nn.Module, mask: torch.Tensor | None = None):
-        super().__init__()
+def is_popupifiable(module: nn.Module) -> bool:
+    # only want to popupify these, ie ignore batchnorm
+    return isinstance(module, (nn.Linear, nn.Conv2d))
 
-        if not isinstance(layer, (nn.Linear, nn.Conv2d)):
-            raise TypeError("MaskLayer only supports nn.Linear and nn.Conv2d")
+def popupify_inplace(module: nn.Module, k=.5):
+    for name, child in list(module.named_children()):
+        # recurse first so we reach leaves inside bigger blocks
+        popupify_inplace(child, k)
 
-        self.layer = layer
+        # only replace Conv2d and Linear layers
+        if is_popupifiable(child):
+            setattr(module, name, PoppedUpLayer(child, k))
 
-        if mask is None:
-            mask = torch.ones_like(layer.weight)
-        else:
-            mask = mask.detach().clone().to(layer.weight.device, dtype=layer.weight.dtype)
+    return module
 
-        if mask.shape != layer.weight.shape:
-            raise ValueError(
-                f"Mask shape {mask.shape} must match weight shape {layer.weight.shape}"
-            )
+def popupify(network: nn.Module, k=.5):
+    net_copy = copy.deepcopy(network)
+    return popupify_inplace(net_copy, k)
 
-        self.register_buffer("mask", mask)
-
-    @property
-    def weight(self):
-        return self.layer.weight
-
-    @property
-    def bias(self):
-        return self.layer.bias
-
-    def forward(self, x):
-        masked_weight = self.layer.weight * self.mask
-        bias = self.layer.bias
-
-        if isinstance(self.layer, nn.Linear):
-            return F.linear(x, masked_weight, bias)
-
-        elif isinstance(self.layer, nn.Conv2d):
-            return F.conv2d(
-                x,
-                masked_weight,
-                bias,
-                stride=self.layer.stride,
-                padding=self.layer.padding,
-                dilation=self.layer.dilation,
-                groups=self.layer.groups,
-            )
-
-        raise RuntimeError("Unsupported layer type in MaskLayer")
+def set_subnetwork_training_mode(model):
+    for m in model.modules():
+        if isinstance(m, PoppedUpLayer):
+            m.set_subnetwork_training_mode()
