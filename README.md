@@ -1,6 +1,6 @@
 # JACKPOT!
 
-**Reliable extraction of strong lottery ticket (high performing) subnetworks from UNTRAINED neural networks**, accompanied by an **even stronger** conjecture than the strong lottery ticket hypothesis
+**Reliable extraction of strong lottery ticket (high performing) subnetworks from UNTRAINED neural networks**, accompanied by an **even stronger** conjecture regarding such subnetworks... that they exist across *many* sparsity levels
 
 ![Accuracy Plot](imgs/multibar_real.png)
 
