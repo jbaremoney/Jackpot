@@ -2,6 +2,8 @@
 
 Research code for **reliably extracting strong lottery ticket (high performing) subnetworks from UNTRAINED neural networks**, and comparing that to classic pruning-at-initialization baselines.
 
+
+
 ## Abstract
 The lottery ticket hypothesis proposes that large random neural networks contain sparse subnetworks that can match the performance of the original dense model. Later work established a strong version of this phenomenon: sufficiently overparameterized random networks contain subnetworks that already approximate a target network before any weight training. What remains difficult in practice is not existence, but extraction. 
 
