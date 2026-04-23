@@ -1,3 +1,4 @@
 */pyth
 .idea
 **/__pycache__/
+*.DS_Store
