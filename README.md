@@ -1,6 +1,6 @@
 # Jackpot
 
-Research code for **finding strong lottery-ticket subnetworks inside randomly initialized (untrained) networks**, and comparing that to classic pruning-at-initialization baselines.
+Research code for **reliably extracting strong lottery ticket subnetworks from untrained neural networks**, and comparing that to classic pruning-at-initialization baselines.
 
 ## What’s here
 
