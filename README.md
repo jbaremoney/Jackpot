@@ -1,6 +1,6 @@
 # JACKPOT!
 
-Research code for **reliably extracting strong lottery ticket (high performing) subnetworks from UNTRAINED neural networks**, and comparing that to classic pruning-at-initialization baselines.
+**reliably extracting strong lottery ticket (high performing) subnetworks from UNTRAINED neural networks**, as well as an **even stronger** conjecture than the strong lottery ticket hypothesis. 
 
 ![Accuracy Plot](imgs/multibar_real.png)
 
