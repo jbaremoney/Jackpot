@@ -1,4 +1,4 @@
-# Jackpot
+# JACKPOT!
 
 Research code for **reliably extracting strong lottery ticket subnetworks from untrained neural networks**, and comparing that to classic pruning-at-initialization baselines.
 
