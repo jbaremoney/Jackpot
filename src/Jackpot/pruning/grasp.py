@@ -1,11 +1,17 @@
+"""
+**GraSP**: gradient signal preservation via Hessian–gradient structure on a mini-batch.
+
+Based on the reference `GraSP pruner
+<https://github.com/alecwangcq/GraSP/blob/master/pruner/GraSP.py>`_.
+"""
+import copy
+
 import torch
 import torch.autograd as autograd
 import torch.nn as nn
 import torch.nn.functional as F
-import copy
 
 
-#https://github.com/alecwangcq/GraSP/blob/master/pruner/GraSP.py
 def GraSP_fetch_data(dataloader, num_classes, samples_per_class):
     datas = [[] for _ in range(num_classes)]
     labels = [[] for _ in range(num_classes)]
@@ -44,7 +50,23 @@ def count_fc_parameters(net):
     return total
 
 
-def GraSP(net, ratio, train_dataloader, device, num_classes=10, samples_per_class=25, num_iters=1, T=200, reinit=False):
+def GraSP(
+    net,
+    ratio,
+    train_dataloader,
+    device,
+    num_classes=10,
+    samples_per_class=25,
+    num_iters=1,
+    T=200,
+    reinit=False,
+):
+    """
+    One-shot masks from a GraSP-style score; ``ratio`` is fraction of weights pruned.
+
+    ``T`` temperature-softens logits in the inner cross-entropy; ``reinit`` optionally
+    reinitializes FC weights before scoring.
+    """
     eps = 1e-10
     keep_ratio = 1-ratio
     old_net = net

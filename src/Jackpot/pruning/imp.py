@@ -1,13 +1,21 @@
+"""
+**Iterative Magnitude Pruning (IMP)** on a masked network: train, prune smallest
+surviving magnitudes, rewind weights, repeat.
+
+Uses ``MaskedNetwork`` / ``MaskLayer`` so masks stay explicit and comparable to
+one-shot methods (SNIP, GraSP) in the rest of this package.
+"""
+import copy
 from itertools import cycle
-from torch import nn, optim
-from models.layer import MaskLayer
+
 import torch
 import tqdm
-import copy
-from models.network import MaskedNetwork
-from utils.training import trainit
+from torch import nn, optim
 
-# need new training function to give control over number of steps
+from src.Jackpot.models.masking import MaskLayer, MaskedNetwork
+from src.Jackpot.training.train import trainit
+
+
 def train_step(model, batch, optimizer, task, n_classes, device):
     if task == "multi-label, binary-class":
         criterion = nn.BCEWithLogitsLoss()
@@ -35,16 +43,19 @@ def train_step(model, batch, optimizer, task, n_classes, device):
 
     return loss.item()
 
-def train_for_steps(model,
-                    num_steps,
-                    train_loader,
-                    optimizer,
-                    task,
-                    n_classes,
-                    device,
-                    return_losses=False,
-                    no_progress=False):
 
+def train_for_steps(
+    model,
+    num_steps,
+    train_loader,
+    optimizer,
+    task,
+    n_classes,
+    device,
+    return_losses=False,
+    no_progress=False,
+):
+    """Run ``num_steps`` optimizer steps by cycling ``train_loader`` (no epoch semantics)."""
     if return_losses:
         losses = []
 
@@ -71,8 +82,8 @@ def train_for_steps(model,
     if return_losses:
         return losses
 
-# helper to get weight sparsity of MaskedNetwork
 def maskednetwork_sparsity(masked_net):
+    """Fraction of mask entries that are zero across all ``MaskLayer`` modules."""
     zero_count = 0
     total_count = 0
 
@@ -113,8 +124,10 @@ def IMP(
     prune_global=False,
 ):
     """
-    Iterative Magnitude Pruning:
-    train -> prune -> rewind -> repeat
+    Train → prune lowest-magnitude active weights → rewind → repeat for ``L_max`` rounds.
+
+    Returns ``(keep_masks, masked_net)`` where ``keep_masks`` maps original prunable
+    modules to binary tensors aligned with their ``weight`` shape.
     """
 
     keep_ratio_final = 1.0 - final_sparsity

@@ -1,15 +1,17 @@
+"""Dataset utilities for faster epochs when transforms are fixed."""
+
 from torch.utils.data import Dataset
 
-# wrap dataset with this if we don't transform during training
-# speeds up training a lot
+
 class PreloadedDataset(Dataset):
+    """Materialize every ``(image, label)`` once so each epoch avoids per-item transforms."""
+
     def __init__(self, dataset):
         self.images = []
         self.labels = []
 
         for i in range(len(dataset)):
             # DOES TRANSFORM UP FRONT BEFORE TRAINING
-            # this is why the training loop goes faster
             img, label = dataset[i]
 
             self.images.append(img)

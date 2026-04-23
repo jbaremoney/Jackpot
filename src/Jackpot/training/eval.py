@@ -1,14 +1,18 @@
+"""Accuracy / loss evaluation on train or test splits."""
+
 import torch
 from torch import nn, device
 
 
-def test(split,
-         model,
-         train_loader_at_eval,
-         test_loader,
-         n_classes,
-         return_metrics=False):
-
+def test(
+    split,
+    model,
+    train_loader_at_eval,
+    test_loader,
+    n_classes,
+    return_metrics=False,
+):
+    """Average cross-entropy loss and accuracy (train split uses ``train_loader_at_eval``)."""
     model.eval()
     criterion = nn.CrossEntropyLoss()
 
@@ -42,6 +46,7 @@ def test(split,
         return avg_loss, acc
 
 def evaluate_model(model, train_loader_at_eval, test_loader, task, n_classes, data_flag):
+    """Train and test metrics in one dict (``data_flag`` reserved for logging hooks)."""
     train_loss, train_acc = test(
         split="train",
         model=model,
@@ -69,6 +74,7 @@ def evaluate_model(model, train_loader_at_eval, test_loader, task, n_classes, da
 
 
 def evaluate_at_epoch(model, epoch, train_loader_at_eval, test_loader, task, n_classes, data_flag):
+    """Same as ``evaluate_model`` with ``epoch`` attached for checkpoint tables."""
     metrics = evaluate_model(
         model=model,
         train_loader_at_eval=train_loader_at_eval,

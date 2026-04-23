@@ -1,11 +1,16 @@
-from src.Jackpot.pruning.popup import PoppedUpLayer
-import torch.nn as nn
-import torch
+"""Reproducibility and sparsity accounting for popup-wrapped models."""
+
 import random
+
 import numpy as np
+import torch
+import torch.nn as nn
+
+from src.Jackpot.pruning.popup import PoppedUpLayer
 
 
 def get_effective_sparsity_info(model):
+    """Fraction of weights set to zero after applying popup masks (popup layers only)."""
     total_zeros = 0
     total_count = 0
 
@@ -20,6 +25,7 @@ def get_effective_sparsity_info(model):
             "total_count": total_count}
 
 def set_seed(seed=0):
+    """Fix Python, NumPy, and PyTorch RNGs (CUDA included if available)."""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)

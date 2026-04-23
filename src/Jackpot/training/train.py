@@ -1,6 +1,9 @@
+"""
+Training loops and CIFAR dataloaders used by pruning and popup experiments.
+"""
 import torch
-from torch import nn, device
 import tqdm
+from torch import nn, device
 from src.Jackpot.training.eval import evaluate_at_epoch
 from src.Jackpot.utils.utils import get_effective_sparsity_info
 import torch.utils.data as data
@@ -16,6 +19,12 @@ def getTrainingDataLoaders(
     augment=True,
     preload_train=None,
 ):
+    """
+    Build train / eval / test loaders for ``cifar10`` or ``cifar100``.
+
+    When ``augment`` is True, training uses random flip + crop and is not preloaded
+    unless ``preload_train`` overrides that.
+    """
     dataset_name = dataset_name.lower()
 
     # ----------------------------
@@ -89,16 +98,18 @@ def getTrainingDataLoaders(
     return info, task, n_classes, train_loader, train_loader_at_eval, test_loader
 
 
-def trainit(model,
-            NUM_EPOCHS,
-            train_loader,
-            optimizer,
-            task,
-            n_classes,
-            return_losses=False,
-            no_progress=False,
-            return_sparsity=False):
-
+def trainit(
+    model,
+    NUM_EPOCHS,
+    train_loader,
+    optimizer,
+    task,
+    n_classes,
+    return_losses=False,
+    no_progress=False,
+    return_sparsity=False,
+):
+    """Standard epoch loop; optionally record per-step loss and popup effective sparsity."""
     if task == "multi-label, binary-class":
         criterion = nn.BCEWithLogitsLoss()
     else:

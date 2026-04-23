@@ -1,13 +1,19 @@
+"""
+Explicit binary masks on ``nn.Linear`` / ``nn.Conv2d`` weights.
+
+Used to extract a fixed subnetwork (e.g. masks from SNIP, GraSP, or IMP) while
+keeping the same forward pass as the original layer.
+"""
+import copy
+
 import torch
 import torch.nn as nn
-import copy
 import torch.nn.functional as F
 
 
 class MaskLayer(nn.Module):
-    """used for comparison to snip, grasp, imp
-        only masks weights
-    """
+    """Wraps a linear or conv layer as ``y = f(x; w ⊙ m)`` with a stored mask ``m``."""
+
     def __init__(self, layer: nn.Module, mask: torch.Tensor | None = None):
         super().__init__()
 
@@ -58,6 +64,8 @@ class MaskLayer(nn.Module):
 
 
 class MaskedNetwork(nn.Module):
+    """Deep-copies ``net`` and replaces each ``Linear``/``Conv2d`` with a ``MaskLayer``."""
+
     def __init__(self, net: nn.Module, masks=None):
         super().__init__()
 
@@ -92,6 +100,7 @@ class MaskedNetwork(nn.Module):
         return self.net(x)
 
     def get_masks(self):
+        """Return mask tensors in module traversal order (one per ``MaskLayer``)."""
         masks = []
         for m in self.net.modules():
             if isinstance(m, MaskLayer):

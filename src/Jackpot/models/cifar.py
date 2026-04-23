@@ -1,8 +1,11 @@
+"""Small CNNs for CIFAR-10 / CIFAR-100 shaped inputs (3×32×32)."""
+
 import torch
 import torch.nn as nn
 
 
 class CIFARVGG16(nn.Module):
+    """VGG-16 style stack (no FC hidden layers): conv blocks + global pool + one linear head."""
 
     cfg = [
         64, 64, "M",
@@ -72,6 +75,8 @@ class CIFARVGG16(nn.Module):
 
 
 class CIFARMLP(nn.Module):
+    """Fully-connected baseline on flattened 3072-dim CIFAR vectors."""
+
     def __init__(self, hidden_sizes=[512, 256], num_classes=10):
         super().__init__()
         self.flatten = nn.Flatten()

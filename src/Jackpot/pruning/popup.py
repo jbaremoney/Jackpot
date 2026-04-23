@@ -1,10 +1,21 @@
+"""
+Doubled-popup algorithm to extract strong lottery tickets.
+
+Learned scores induce a binary mask (top fraction of magnitudes kept); the
+backward pass is straight-through so gradients flow to the scores. Frozen
+base weights can be switched to trainable after mask selection.
+"""
+import copy
+
 import torch
 import torch.nn as nn
 from torch import autograd
 from torch.func import functional_call
-import copy
 
+#https://github.com/iceychris/edge-popup
 class GetSubnet(autograd.Function):
+    """Top-``k`` magnitudes → 1, remainder → 0; backward passes ``grad`` unchanged (STE)."""
+
     @staticmethod
     def forward(ctx, scores, k):
 
@@ -26,8 +37,10 @@ class GetSubnet(autograd.Function):
         # send the gradient g straight-through on the backward pass.
         return grad, None
 
-"""general class to wrap a module, 'popupify' the trainable parameters"""
+
 class PoppedUpLayer(nn.Module):
+    """Wraps a leaf module: forward uses ``weight * mask(scores)`` via ``functional_call``."""
+
     def __init__(self, module: nn.Module, k: float = 0.5, just_weight: bool = True):
         super().__init__()
         self.module = module
@@ -100,8 +113,9 @@ class PoppedUpLayer(nn.Module):
 
 
 def is_popupifiable(module: nn.Module) -> bool:
-    # only want to popupify these, ie ignore batchnorm
+    """Linear and conv layers get popup scores; norm and pooling are left as-is."""
     return isinstance(module, (nn.Linear, nn.Conv2d))
+
 
 def popupify_inplace(module: nn.Module, k=.5):
     for name, child in list(module.named_children()):
@@ -114,11 +128,15 @@ def popupify_inplace(module: nn.Module, k=.5):
 
     return module
 
+
 def popupify(network: nn.Module, k=.5):
+    """Return a deep copy of ``network`` with ``PoppedUpLayer`` leaves (scores trainable by default)."""
     net_copy = copy.deepcopy(network)
     return popupify_inplace(net_copy, k)
 
+
 def set_subnetwork_training_mode(model):
+    """After mask selection: freeze popup scores, unfreeze underlying conv/linear weights."""
     for m in model.modules():
         if isinstance(m, PoppedUpLayer):
             m.set_subnetwork_training_mode()

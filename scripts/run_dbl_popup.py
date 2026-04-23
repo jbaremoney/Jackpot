@@ -1,3 +1,8 @@
+"""
+Example: popupify a VGG-16 for CIFAR-10 and plot training loss and effective sparsity over training steps.
+
+Run from repo root: ``PYTHONPATH=src python scripts/run_dbl_popup.py``
+"""
 from src.Jackpot.models.cifar import CIFARVGG16
 from src.Jackpot.pruning.popup import popupify
 from src.Jackpot.utils.utils import set_seed
@@ -26,15 +31,15 @@ info, task, n_classes, train_loader, train_loader_at_eval, test_loader = getTrai
 
 
 prune_losses, prune_sparsities = trainit(
-                model,
-                NUM_EPOCHS,
-                train_loader,
-                optimizer,
-                task,
-                n_classes,
-                return_losses=True,
-                return_sparsity=True
-          )
+    pu_model,
+    NUM_EPOCHS,
+    train_loader,
+    optimizer,
+    task,
+    n_classes,
+    return_losses=True,
+    return_sparsity=True,
+)
 
 plt.plot(prune_losses, label='Training loss')
 plt.legend()

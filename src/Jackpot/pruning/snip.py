@@ -1,9 +1,16 @@
+"""
+**SNIP** (single-shot): prune using ``|w · ∂L/∂w|`` on a small balanced batch.
+
+Reference implementation lineage: `sanity-checking-pruning
+<https://github.com/JingtongSu/sanity-checking-pruning/blob/main/pruner/SNIP.py>`_.
+"""
+import copy
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import copy
 
-#https://github.com/JingtongSu/sanity-checking-pruning/blob/main/pruner/SNIP.py
+
 def SNIP_fetch_data(dataloader, num_classes, samples_per_class):
     datas = [[] for _ in range(num_classes)]
     labels = [[] for _ in range(num_classes)]
@@ -42,7 +49,12 @@ def count_fc_parameters(net):
     return total
 
 
-def SNIP(net, ratio, train_dataloader, device, num_classes=10, samples_per_class=25,num_iters=1):
+def SNIP(net, ratio, train_dataloader, device, num_classes=10, samples_per_class=25, num_iters=1):
+    """
+    Return per-module **keep** masks (1 = keep) for conv/linear weights at sparsity ``ratio``.
+
+    ``ratio`` is the fraction of weights to prune; remaining mass is normalized before thresholding.
+    """
     eps = 1e-10
     keep_ratio = 1-ratio
     old_net = net
