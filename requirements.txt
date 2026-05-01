@@ -3,3 +3,6 @@ tqdm
 numpy
 torchvision
 matplotlib
+medmnist
+scikit-learn
+itertools
