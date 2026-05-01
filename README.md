@@ -87,7 +87,7 @@ File names correspond to the sections of the paper where the associated experime
 A few pretrained models can be downloaded directly at this LINK. 
 The models for download are as follows:
 
-## Citation
+## 4. Citation
 
 If you find this repository useful in your research, please cite our paper:
 
@@ -101,14 +101,14 @@ If you find this repository useful in your research, please cite our paper:
 ```
 
 
-### Notes
+### 5. Notes
 
 * Results, checkpoints, and generated outputs may be saved under `results/`.
 * For reproducibility, random seeds can be set using the utilities in `src/wtl/utils/seed.py`.
 * This repository was tested primarily on macOS/Linux. Minor path adjustments may be needed on Windows.
 
 
-## Contributing
+## 6. Contributing
 
 >📋  Pick a licence and describe how to contribute to your code repository. 
 
