@@ -58,14 +58,17 @@ If your local setup uses a different data path, update the corresponding script 
 
 ## 2. Experiment
 
-### 2.1.Train
+### 2.1. Train
 
 ```bash
-python scripts/run_popup.py
+python scripts/run_dbl_popup.py
 ```
 
 ### 2.2. Evaluate
-
+Scripts generally contain code to evaluate a trained model already. The function used to evaluate a model on test data is at the following location: 
+```bash
+./src/Jackpot/training/eval.py
+```
 
 
 ### 2.3. Reproduce Paper Figures
