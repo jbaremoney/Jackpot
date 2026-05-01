@@ -84,7 +84,7 @@ Code used to generate figures from the paper is provided in:
 File names correspond to the sections of the paper where the associated experiments are described.
 
 ## 3. Pretrained Models
-A few pretrained models can be downloaded directly at this LINK. 
+A few pretrained models can be downloaded directly [here](https://drive.google.com/drive/folders/1wZH0mdlz5jW6MV4LXsVP3D5sRaA1Lctp?usp=drive_link). 
 The models for download are as follows:
 
 ## 4. Citation
