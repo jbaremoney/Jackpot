@@ -18,18 +18,18 @@ notebooks/        # paper figure reproduction notebooks
 tests/            # lightweight correctness tests
 ```
 
-## Requirements
+## 1. Requirements
 
 This repository was developed with Python 3.10.
 
-### 1. Clone the repository
+### 1.1. Clone the repository
 
 ```bash
 git clone https://github.com/jbaremoney/Jackpot
 cd Jackpot
 ```
 
-### 2. Create and activate a virtual environment
+### 1.2. Create and activate a virtual environment
 
 Using `venv`:
 
@@ -38,13 +38,13 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 1.3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Dataset setup
+### 1.4. Dataset setup
 
 The experiments in this repository primarily use MedMNIST and CIFAR10 datasets.
 
@@ -56,19 +56,19 @@ If you are using the provided training / experiment scripts with `torchvision`, 
 
 If your local setup uses a different data path, update the corresponding script or configuration file accordingly.
 
-## Experiment
+## 2. Experiment
 
-### Train
+### 2.1.Train
 
 ```bash
 python scripts/run_popup.py
 ```
 
-### Evaluate
+### 2.2. Evaluate
 
 
 
-### Reproduce Paper Figures
+### 2.3. Reproduce Paper Figures
 
 Code used to reproduce figures from the paper is provided in:
 
