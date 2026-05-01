@@ -103,3 +103,6 @@ Run scripts from the repo root with `PYTHONPATH` including `src`:
 ```bash
 PYTHONPATH=src python scripts/run_dbl_popup.py
 ```
+
+# It's already in there
+[![Surf's Up Scene](imgs/vid_thumbnail.png)](https://youtu.be/VD8UttNfU60?si=N8Iir_yeo5GhBDXs&t=30)
