@@ -73,7 +73,7 @@ Scripts generally contain code to evaluate a trained model already. The function
 
 ### 2.3. Reproduce Paper Figures
 
-Code used to reproduce figures from the paper is provided in:
+Code used to generate figures from the paper is provided in:
 
 ```bash
 experiments/paper_figures/
