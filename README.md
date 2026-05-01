@@ -79,22 +79,28 @@ Scripts generally contain code to evaluate a trained model already. The function
 Code used to generate figures from the paper is provided in:
 
 ```bash
-experiments/paper_figures/
+./experiments
 ```
+File names correspond to the sections of the paper where the associated experiments are described.
 
 ## 3. Pretrained Models
 A few pretrained models can be downloaded directly at this LINK. 
 The models for download are as follows:
 
+## 4. Citation
 
-### Notes
+If you find this repository useful in your research, please cite our paper:
 
-* Results, checkpoints, and generated outputs may be saved under `results/`.
-* For reproducibility, random seeds can be set using the utilities in `src/wtl/utils/seed.py`.
-* This repository was tested primarily on macOS/Linux. Minor path adjustments may be needed on Windows.
+```bibtex
+@article{jackpot2026,
+  title={JACKPOT!: Reliable and Efficient Extraction of Strong and Weak Lottery Tickets in Neural Networks},
+  author={Christopherson, Bryce Alan and Colgrove, Darian and Baretz, Jack and Kwakye, Daniel and Epstein, Martin and Dandan, Salah},
+  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  year={2026}
+}
+```
 
-
-## Contributing
+## 5. Contributing
 
 >📋  Pick a licence and describe how to contribute to your code repository. 
 
