@@ -79,12 +79,9 @@ Code used to generate figures from the paper is provided in:
 experiments/paper_figures/
 ```
 
-and, where applicable, through scripts in:
-
-```bash
-scripts/
-```
-
+## 3. Pretrained Models
+A few pretrained models can be downloaded directly at this LINK. 
+The models for download are as follows:
 
 
 ### Notes
