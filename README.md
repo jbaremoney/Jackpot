@@ -4,29 +4,74 @@
 
 ![Accuracy Plot](imgs/multibar_real.png)
 
-## Abstract
-The lottery ticket hypothesis proposes that large random neural networks contain sparse subnetworks that can match the performance of the original dense model. Later work established a strong version of this phenomenon: sufficiently overparameterized random networks contain subnetworks that already approximate a target network before any weight training. What remains difficult in practice is not existence, but extraction. 
+## Requirements
 
-This note reorganizes that problem around a single bottleneck in *edge-popup* style methods: the need to choose layer-wise sparsity levels. We show that if a layer is at least half sparse, then fixing the mask density at one half does not reduce the set of subnetworks that can be represented, and we extend this observation to a doubled score space that preserves the same representational freedom for dense layers without explicitly doubling the weight matrices. 
+This repository was developed with Python 3.10.
 
-This yields an algorithm,  which that we call *double-scoring* and is only mildly different from Ramanujan et al's *edge-popup* algorithm, yet is capable of extracting strong lottery tickets from neural networks and has the same asymptotic runtime as classical training.  We then perform a number of experiments, showing that *double-scoring* outperforms all other existing lottery ticket extraction methods and that the obtained strong tickets are also weak lottery tickets.  Finally, we conclude with a number of experiments of a more speculative nature and will attempt to convince the reader that this new lottery ticket extraction capability allows for a host of completely novel and highly desirable possibilities.
-
-## What’s here
-
-| Area | Role |
-|------|------|
-| `src/Jackpot/pruning/popup.py` | **Edge-popup** style trainable scores; binary masks via a straight-through estimator. |
-| `src/Jackpot/pruning/snip.py`, `grasp.py` | **SNIP** / **GraSP**: one-shot masks from gradients / Hessian–gradient products on a mini-batch. |
-| `src/Jackpot/pruning/imp.py` | **Iterative magnitude pruning** on a masked copy of the network (trained baseline). |
-| `src/Jackpot/models/` | CIFAR-friendly **VGG-16** and **MLP**, plus `MaskLayer` / `MaskedNetwork` for explicit binary masks. |
-| `src/Jackpot/training/` | Data loaders, training loop, and eval helpers. |
-
-## Setup
+### 1. Clone the repository
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
+git clone <your-repo-url>
+cd Jackpot
+```
+
+### 2. Create and activate a virtual environment
+
+Using `venv`:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
 ```
+
+### 4. Dataset setup
+
+The experiments in this repository use CIFAR-10.
+
+If you are using the provided training / experiment scripts with `torchvision`, CIFAR-10 will be downloaded automatically the first time it is needed. By default, you may wish to store datasets under:
+
+```bash
+./data
+```
+
+If your local setup uses a different data path, update the corresponding script or configuration file accordingly.
+
+### 5. Run an example experiment
+
+```bash
+python scripts/run_popup.py
+```
+
+### 6. Reproduce paper figures
+
+Code used to reproduce figures from the paper is provided in:
+
+```bash
+notebooks/paper_figures/
+```
+
+and, where applicable, through scripts in:
+
+```bash
+scripts/
+```
+
+### Notes
+
+* Results, checkpoints, and generated outputs may be saved under `results/`.
+* For reproducibility, random seeds can be set using the utilities in `src/wtl/utils/seed.py`.
+* This repository was tested primarily on macOS/Linux. Minor path adjustments may be needed on Windows.
+
+
+## Contributing
+
+>📋  Pick a licence and describe how to contribute to your code repository. 
 
 Run scripts from the repo root with `PYTHONPATH` including `src`:
 
