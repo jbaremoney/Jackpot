@@ -1,7 +1,9 @@
 # JACKPOT!
-## or
-### Reliable extraction of strong lottery ticket subnetworks from untrained neural networks
-**Official implementation code for paper: JACKPOT! (LINK IT)**
+
+### Reliable Extraction of Strong Lottery Ticket Subnetworks from Untrained Neural Networks
+
+Official implementation of the paper  
+**[JACKPOT!: Reliable Extraction of Strong Lottery Ticket Subnetworks from Untrained Neural Networks](LINK)**
 
 ![Accuracy Plot](imgs/multibar_real.png)
 
