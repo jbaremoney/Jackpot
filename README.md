@@ -32,9 +32,9 @@ pip install -r requirements.txt
 
 ### 4. Dataset setup
 
-The experiments in this repository use CIFAR-10.
+The experiments in this repository primarily use MedMNIST and CIFAR10 datasets.
 
-If you are using the provided training / experiment scripts with `torchvision`, CIFAR-10 will be downloaded automatically the first time it is needed. By default, you may wish to store datasets under:
+If you are using the provided training / experiment scripts with `torchvision`, the datasets will be downloaded automatically the first time they are needed. By default, you may wish to store datasets under:
 
 ```bash
 ./data
@@ -55,7 +55,7 @@ python scripts/run_popup.py
 Code used to reproduce figures from the paper is provided in:
 
 ```bash
-notebooks/paper_figures/
+experiments/paper_figures/
 ```
 
 and, where applicable, through scripts in:
