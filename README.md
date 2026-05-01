@@ -94,7 +94,7 @@ If you find this repository useful in your research, please cite our paper:
 ```bibtex
 @article{jackpot2026,
   title={JACKPOT!: Reliable and Efficient Extraction of Strong and Weak Lottery Tickets in Neural Networks},
-  author={Christopherson, Colgrove, Baretz},
+  author={Christopherson, Bryce Alan and Colgrove, Darian and Baretz, Jack and Kwakye, Daniel and Epstein, Martin and Dandan, Salah},
   journal={arXiv preprint arXiv:XXXX.XXXXX},
   year={2026}
 }
