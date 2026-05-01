@@ -11,7 +11,7 @@ This repository was developed with Python 3.10.
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/jbaremoney/Jackpot
 cd Jackpot
 ```
 
@@ -41,6 +41,8 @@ If you are using the provided training / experiment scripts with `torchvision`, 
 ```
 
 If your local setup uses a different data path, update the corresponding script or configuration file accordingly.
+
+## Running
 
 ### 5. Run an example experiment
 
