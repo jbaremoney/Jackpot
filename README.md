@@ -100,15 +100,7 @@ If you find this repository useful in your research, please cite our paper:
 }
 ```
 
-
-### 5. Notes
-
-* Results, checkpoints, and generated outputs may be saved under `results/`.
-* For reproducibility, random seeds can be set using the utilities in `src/wtl/utils/seed.py`.
-* This repository was tested primarily on macOS/Linux. Minor path adjustments may be needed on Windows.
-
-
-## 6. Contributing
+## 5. Contributing
 
 >📋  Pick a licence and describe how to contribute to your code repository. 
 
