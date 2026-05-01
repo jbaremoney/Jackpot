@@ -4,6 +4,20 @@
 
 ![Accuracy Plot](imgs/multibar_real.png)
 
+## Repository Structure
+
+```text
+src/wtl/
+├── models/       # model definitions and masking wrappers
+├── pruning/      # popup, SNIP, GraSP, IMP
+├── training/     # training and evaluation loops
+└── utils/        # reproducibility and metric helpers
+
+scripts/          # runnable experiment entry points
+notebooks/        # paper figure reproduction notebooks
+tests/            # lightweight correctness tests
+```
+
 ## Requirements
 
 This repository was developed with Python 3.10.
