@@ -79,8 +79,9 @@ Scripts generally contain code to evaluate a trained model already. The function
 Code used to generate figures from the paper is provided in:
 
 ```bash
-experiments/paper_figures/
+./experiments
 ```
+File names correspond to the sections of the paper where the associated experiments are described.
 
 ## 3. Pretrained Models
 A few pretrained models can be downloaded directly at this LINK. 
