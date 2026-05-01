@@ -87,6 +87,19 @@ File names correspond to the sections of the paper where the associated experime
 A few pretrained models can be downloaded directly at this LINK. 
 The models for download are as follows:
 
+## Citation
+
+If you find this repository useful in your research, please cite our paper:
+
+```bibtex
+@article{jackpot2026,
+  title={JACKPOT!: Reliable and Efficient Extraction of Strong and Weak Lottery Tickets in Neural Networks},
+  author={Christopherson, Colgrove, Baretz},
+  journal={arXiv preprint arXiv:XXXX.XXXXX},
+  year={2026}
+}
+```
+
 
 ### Notes
 
