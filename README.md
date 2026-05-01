@@ -56,15 +56,19 @@ If you are using the provided training / experiment scripts with `torchvision`, 
 
 If your local setup uses a different data path, update the corresponding script or configuration file accordingly.
 
-## Running
+## Experiment
 
-### 5. Run an example experiment
+### Train
 
 ```bash
 python scripts/run_popup.py
 ```
 
-### 6. Reproduce paper figures
+### Evaluate
+
+
+
+### Reproduce Paper Figures
 
 Code used to reproduce figures from the paper is provided in:
 
@@ -77,6 +81,8 @@ and, where applicable, through scripts in:
 ```bash
 scripts/
 ```
+
+
 
 ### Notes
 
