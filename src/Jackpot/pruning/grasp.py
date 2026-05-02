@@ -34,22 +34,6 @@ def GraSP_fetch_data(dataloader, num_classes, samples_per_class):
     return X, y
 
 
-def count_total_parameters(net):
-    total = 0
-    for m in net.modules():
-        if isinstance(m, (nn.Linear, nn.Conv2d)):
-            total += m.weight.numel()
-    return total
-
-
-def count_fc_parameters(net):
-    total = 0
-    for m in net.modules():
-        if isinstance(m, (nn.Linear)):
-            total += m.weight.numel()
-    return total
-
-
 def GraSP(
     net,
     ratio,
@@ -62,118 +46,169 @@ def GraSP(
     reinit=False,
 ):
     """
-    One-shot masks from a GraSP-style score; ``ratio`` is fraction of weights pruned.
+    Compute GraSP keep masks for Conv2d and Linear weights.
 
-    ``T`` temperature-softens logits in the inner cross-entropy; ``reinit`` optionally
-    reinitializes FC weights before scoring.
+    GraSP scores each weight using a second-order gradient-preservation criterion.
+    In this implementation, the score is approximately ``-w * (H g)``, where ``g``
+    is an accumulated gradient vector and ``H g`` is a Hessian-gradient product
+    estimated from balanced training batches.
+
+    Args:
+        net: Model to prune.
+        ratio: Fraction of Conv2d/Linear weights to prune.
+        train_dataloader: Dataloader used to sample scoring batches.
+        device: Device used for scoring.
+        num_classes: Number of classes.
+        samples_per_class: Number of examples collected per class.
+        num_iters: Number of balanced batches used to accumulate gradient signal.
+        T: Temperature applied to logits before cross-entropy.
+        reinit: If True, reinitialize scored Conv2d/Linear weights before scoring.
+
+    Returns:
+        Dictionary mapping modules in the original model to binary keep masks.
+        A mask value of 1 means keep the weight; 0 means prune it.
     """
     eps = 1e-10
-    keep_ratio = 1-ratio
     old_net = net
 
-    net = copy.deepcopy(net)  # .eval()
+    net = copy.deepcopy(net).to(device)
     net.zero_grad()
 
     weights = []
-    total_parameters = count_total_parameters(net)
-    fc_parameters = count_fc_parameters(net)
 
-    # rescale_weights(net)
     for layer in net.modules():
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            if isinstance(layer, nn.Linear) and reinit:
-                nn.init.xavier_normal(layer.weight)
+        if isinstance(layer, (nn.Conv2d, nn.Linear)):
+            if reinit:
+                # Optionally reinitialize scored weights before computing GraSP scores.
+                nn.init.xavier_normal_(layer.weight)
             weights.append(layer.weight)
 
-    inputs_one = []
-    targets_one = []
+    # Store data chunks for the second-order phase.
+    stored_inputs = []
+    stored_targets = []
 
+    # will be list of gradient tensors
     grad_w = None
     for w in weights:
         w.requires_grad_(True)
 
-    print_once = False
     for it in range(num_iters):
-        print("(1): Iterations %d/%d." % (it, num_iters))
-        inputs, targets = GraSP_fetch_data(train_dataloader, num_classes, samples_per_class)
+        print("(1): Iteration %d/%d." % (it + 1, num_iters))
+
+        inputs, targets = GraSP_fetch_data(
+            train_dataloader,
+            num_classes,
+            samples_per_class
+        )
         N = inputs.shape[0]
-        din = copy.deepcopy(inputs)
-        dtarget = copy.deepcopy(targets)
-        inputs_one.append(din[:N//2])
-        targets_one.append(dtarget[:N//2])
-        inputs_one.append(din[N // 2:])
-        targets_one.append(dtarget[N // 2:])
-        inputs = inputs.to(device)
-        targets = targets.to(device)
 
-        outputs = net.forward(inputs[:N//2])/T
-        if print_once:
-            # import pdb; pdb.set_trace()
-            x = F.softmax(outputs)
-            print(x)
-            print(x.max(), x.min())
-            print_once = False
-        loss = F.cross_entropy(outputs, targets[:N//2])
-        # ===== debug ================
+        first_inputs = inputs[:N // 2]
+        first_targets = targets[:N // 2]
+
+        second_inputs = inputs[N // 2:]
+        second_targets = targets[N // 2:]
+
+        # Store CPU copies/chunks for the second-order phase later.
+        stored_inputs.append(first_inputs)
+        stored_targets.append(first_targets)
+        stored_inputs.append(second_inputs)
+        stored_targets.append(second_targets)
+
+        # First half gradient.
+        first_inputs = first_inputs.to(device)
+        first_targets = first_targets.to(device)
+
+        outputs = net(first_inputs) / T
+        loss = F.cross_entropy(outputs, first_targets)
+
         grad_w_p = autograd.grad(loss, weights)
+
         if grad_w is None:
             grad_w = list(grad_w_p)
         else:
             for idx in range(len(grad_w)):
                 grad_w[idx] += grad_w_p[idx]
 
-        outputs = net.forward(inputs[N // 2:])/T
-        loss = F.cross_entropy(outputs, targets[N // 2:])
+        # Second half gradient.
+        second_inputs = second_inputs.to(device)
+        second_targets = second_targets.to(device)
+
+        outputs = net(second_inputs) / T
+        loss = F.cross_entropy(outputs, second_targets)
+
         grad_w_p = autograd.grad(loss, weights, create_graph=False)
+
         if grad_w is None:
             grad_w = list(grad_w_p)
         else:
             for idx in range(len(grad_w)):
                 grad_w[idx] += grad_w_p[idx]
 
-    ret_inputs = []
-    ret_targets = []
+    # Second-order GraSP phase.
+    # This computes a Hessian-gradient-style signal in layer.weight.grad.
+    net.zero_grad()
 
-    for it in range(len(inputs_one)):
-        print("(2): Iterations %d/%d." % (it, num_iters))
-        inputs = inputs_one.pop(0).to(device)
-        targets = targets_one.pop(0).to(device)
-        ret_inputs.append(inputs)
-        ret_targets.append(targets)
-        outputs = net.forward(inputs)/T
+    num_stored_chunks = len(stored_inputs)
+
+    for it in range(num_stored_chunks):
+        print("(2): Iterations %d/%d." % (it + 1, num_stored_chunks))
+
+        inputs = stored_inputs.pop(0).to(device)
+        targets = stored_targets.pop(0).to(device)
+
+        outputs = net(inputs) / T
         loss = F.cross_entropy(outputs, targets)
-        # ===== debug ==============
 
+        # Differentiable gradient of this chunk's loss wrt each weight tensor.
         grad_f = autograd.grad(loss, weights, create_graph=True)
+
+        # Inner product <grad_w, grad_f>.
+        # Backpropagating through this gives a Hessian-gradient product.
         z = 0
-        count = 0
-        for layer in net.modules():
-            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-                z += (grad_w[count].data * grad_f[count]).sum()
-                count += 1
+        for grad_w_layer, grad_f_layer in zip(grad_w, grad_f):
+            z += (grad_w_layer.detach() * grad_f_layer).sum()
+
         z.backward()
 
-    grads = dict()
+
+    # Build GraSP scores for the original model's modules.
+    grads = {}
     old_modules = list(old_net.modules())
+
     for idx, layer in enumerate(net.modules()):
-        if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-            grads[old_modules[idx]] = -layer.weight.data * layer.weight.grad  # -theta_q Hg
+        if isinstance(layer, (nn.Conv2d, nn.Linear)):
+            old_layer = old_modules[idx]
+            grads[old_layer] = -layer.weight.detach() * layer.weight.grad
 
-    # Gather all scores in a single vector and normalise
-    all_scores = torch.cat([torch.flatten(x) for x in grads.values()])
+
+    # Gather all scores into one vector and normalize.
+    all_scores = torch.cat([score.flatten() for score in grads.values()])
     norm_factor = torch.abs(torch.sum(all_scores)) + eps
-    print("** norm factor:", norm_factor)
-    all_scores.div_(norm_factor)
+    all_scores = all_scores / norm_factor
 
-    num_params_to_rm = int(len(all_scores) * (1-keep_ratio))
-    threshold, _ = torch.topk(all_scores, num_params_to_rm, sorted=True)
-    # import pdb; pdb.set_trace()
+
+    # Find global pruning threshold.
+    num_params_to_prune = int(len(all_scores) * ratio)
+
+    if num_params_to_prune == 0:
+        return {
+            module: torch.ones_like(score)
+            for module, score in grads.items()
+        }
+
+    if num_params_to_prune >= len(all_scores):
+        return {
+            module: torch.zeros_like(score)
+            for module, score in grads.items()
+        }
+
+    threshold, _ = torch.topk(all_scores, num_params_to_prune, sorted=True)
     acceptable_score = threshold[-1]
-    print('** accept: ', acceptable_score)
-    keep_masks = dict()
-    for m, g in grads.items():
-        keep_masks[m] = ((g / norm_factor) <= acceptable_score).float()
 
-    print(torch.sum(torch.cat([torch.flatten(x == 1) for x in keep_masks.values()])))
+    # Build binary masks.
+    keep_masks = {}
+
+    for module, score in grads.items():
+        keep_masks[module] = ((score / norm_factor) <= acceptable_score).float()
 
     return keep_masks

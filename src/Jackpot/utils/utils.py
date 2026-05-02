@@ -9,6 +9,23 @@ import torch.nn as nn
 from src.Jackpot.pruning.popup import PoppedUpLayer
 
 
+def count_total_parameters(net):
+    total = 0
+    for m in net.modules():
+        if isinstance(m, (nn.Linear, nn.Conv2d)):
+            total += m.weight.numel()
+    return total
+
+
+def count_fc_parameters(net):
+    total = 0
+    for m in net.modules():
+        if isinstance(m, (nn.Linear)):
+            total += m.weight.numel()
+    return total
+
+
+
 def get_effective_sparsity_info(model):
     """Fraction of weights set to zero after applying popup masks (popup layers only)."""
     total_zeros = 0

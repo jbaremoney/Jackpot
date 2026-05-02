@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 
 class MaskLayer(nn.Module):
-    """Wraps a linear or conv layer as ``y = f(x; w ⊙ m)`` with a stored mask ``m``."""
+    """Wraps a linear or conv layer as ``y = f(x; w ⊙ m)`` with a stored binary mask ``m``."""
 
     def __init__(self, layer: nn.Module, mask: torch.Tensor | None = None):
         super().__init__()

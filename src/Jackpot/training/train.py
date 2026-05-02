@@ -10,7 +10,39 @@ import torch.utils.data as data
 from torchvision.transforms import v2
 from torchvision import datasets
 from src.Jackpot.models.data import PreloadedDataset
+import medmnist
+from medmnist import INFO
 
+class MedMNISTTargetWrapper(data.Dataset):
+    """
+    Normalizes MedMNIST targets.
+
+    For binary-class / multi-class:
+        y becomes a scalar long label.
+
+    For multi-label:
+        y remains a float tensor.
+    """
+    def __init__(self, dataset, task):
+        self.dataset = dataset
+        self.task = task
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        x, y = self.dataset[idx]
+
+        y = torch.as_tensor(y)
+
+        if self.task in ["binary-class", "multi-class"]:
+            y = y.squeeze().long()
+        elif self.task == "multi-label":
+            y = y.float()
+        else:
+            y = y.squeeze()
+
+        return x, y
 
 def getTrainingDataLoaders(
     dataset_name,
@@ -20,10 +52,16 @@ def getTrainingDataLoaders(
     preload_train=None,
 ):
     """
-    Build train / eval / test loaders for ``cifar10`` or ``cifar100``.
+    Build train / eval / test loaders for CIFAR or MedMNIST datasets.
 
-    When ``augment`` is True, training uses random flip + crop and is not preloaded
-    unless ``preload_train`` overrides that.
+    Supports:
+      - cifar10
+      - cifar100
+      - any MedMNIST dataset key in medmnist.INFO, e.g.
+        breastmnist, pathmnist, bloodmnist, tissuemnist, organamnist, etc.
+
+    When augment=True, training uses random augmentation and is not preloaded
+    unless preload_train overrides that.
     """
     dataset_name = dataset_name.lower()
 
@@ -79,9 +117,84 @@ def getTrainingDataLoaders(
             download=download
         )
 
+    # ----------------------------
+    # MedMNIST branch
+    # ----------------------------
+    elif dataset_name in INFO:
+        info = INFO[dataset_name]
+        task = info["task"]
+        n_channels = info["n_channels"]
+        n_classes = len(info["label"])
+
+        DataClass = getattr(medmnist, info["python_class"])
+
+        # Your existing models likely expect 3-channel input.
+        # So grayscale MedMNIST datasets are converted to RGB.
+        if n_channels == 1:
+            test_transform = v2.Compose([
+                v2.ToImage(),
+                v2.ToDtype(torch.float32, scale=True),
+                v2.RGB(),
+                v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            ])
+
+            if augment:
+                train_transform = v2.Compose([
+                    v2.ToImage(),
+                    v2.ToDtype(torch.float32, scale=True),
+                    v2.RGB(),
+                    v2.RandomHorizontalFlip(p=0.5),
+                    v2.RandomAffine(degrees=10, translate=(0.05, 0.05)),
+                    v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+                ])
+            else:
+                train_transform = test_transform
+
+            # Since we convert grayscale to RGB, report 3 channels.
+            info = dict(info)
+            info["dataset"] = dataset_name
+            info["n_channels"] = 3
+            info["size"] = (28, 28)
+
+        else:
+            test_transform = v2.Compose([
+                v2.ToImage(),
+                v2.ToDtype(torch.float32, scale=True),
+                v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+            ])
+
+            if augment:
+                train_transform = v2.Compose([
+                    v2.ToImage(),
+                    v2.ToDtype(torch.float32, scale=True),
+                    v2.RandomHorizontalFlip(p=0.5),
+                    v2.RandomAffine(degrees=10, translate=(0.05, 0.05)),
+                    v2.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+                ])
+            else:
+                train_transform = test_transform
+
+            info = dict(info)
+            info["dataset"] = dataset_name
+            info["size"] = (28, 28)
+
+        train_dataset = DataClass(
+            split="train",
+            transform=train_transform,
+            download=download
+        )
+
+        test_dataset = DataClass(
+            split="test",
+            transform=test_transform,
+            download=download
+        )
+
+        train_dataset = MedMNISTTargetWrapper(train_dataset, task)
+        test_dataset = MedMNISTTargetWrapper(test_dataset, task)
+
     else:
         raise ValueError(f"Unsupported dataset: {dataset_name}")
-
 
     # automatic choice:
     # if augment=True, don't preload, so random augmentation happens every epoch
@@ -91,9 +204,23 @@ def getTrainingDataLoaders(
     if preload_train:
         train_dataset = PreloadedDataset(train_dataset)
 
-    train_loader = data.DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
-    train_loader_at_eval = data.DataLoader(train_dataset, batch_size=2 * BATCH_SIZE, shuffle=False)
-    test_loader = data.DataLoader(test_dataset, batch_size=2 * BATCH_SIZE, shuffle=False)
+    train_loader = data.DataLoader(
+        train_dataset,
+        batch_size=BATCH_SIZE,
+        shuffle=True
+    )
+
+    train_loader_at_eval = data.DataLoader(
+        train_dataset,
+        batch_size=2 * BATCH_SIZE,
+        shuffle=False
+    )
+
+    test_loader = data.DataLoader(
+        test_dataset,
+        batch_size=2 * BATCH_SIZE,
+        shuffle=False
+    )
 
     return info, task, n_classes, train_loader, train_loader_at_eval, test_loader
 
